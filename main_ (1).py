@@ -34,14 +34,14 @@ class StudentAttendanceSystem:
         self.setup_ui()
     
     def init_google_sheets(self):
-        """تهيئة اتصال Google Sheets"""
+        """تهيئة اتصال Google Sheets باستخدام Secrets"""
         try:
             # تحديد الـ scope
             scope = ["https://spreadsheets.google.com/feeds",
                     "https://www.googleapis.com/auth/drive",
                     "https://www.googleapis.com/auth/spreadsheets"]
             
-            # استخدام Streamlit secrets للبيانات الحساسة
+            # استخدام Streamlit secrets
             creds_dict = {
                 "type": "service_account",
                 "project_id": st.secrets["GOOGLE_PROJECT_ID"],
@@ -64,14 +64,20 @@ class StudentAttendanceSystem:
             # فتح الشيت الرئيسي
             try:
                 self.spreadsheet = self.client.open_by_key(self.SHEET_ID)
+                st.success("تم الاتصال بـ Google Sheets بنجاح")
             except gspread.SpreadsheetNotFound:
                 st.error("لم يتم العثور على جدول البيانات. تأكد من ID الصحيح.")
                 return
-            
-            st.success("تم الاتصال بـ Google Sheets بنجاح")
-            
+            except Exception as e:
+                st.error(f"خطأ في الاتصال: {str(e)}")
+                # الانتقال للوضع المحلي عند الفشل
+                self.use_local_storage = True
+                return
+                
         except Exception as e:
-            st.error(f"خطأ في الاتصال بـ Google Sheets: {str(e)}")
+            st.error(f"خطأ في المصادقة: {str(e)}")
+            # الانتقال للوضع المحلي عند الفشل
+            self.use_local_storage = True
     
     def load_data(self):
         """تحميل البيانات من Google Sheets"""
@@ -1062,6 +1068,7 @@ class StudentAttendanceSystem:
 
 if __name__ == "__main__":
     system = StudentAttendanceSystem()
+
 
 
 
